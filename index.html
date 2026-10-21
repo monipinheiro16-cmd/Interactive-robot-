@@ -334,43 +334,60 @@ async function fetchGeminiAIResponse(userPrompt) {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
+  const timeout = setTimeout(() => controller.abort(), 45000);
 
   try {
-    const body = JSON.stringify({
-      systemInstruction: { parts: [{ text:
-        'Você é um robô de estimação fofo, inteligente e brincalhão (estilo Looi / Emo). ' +
-        'Personalidade carinhosa, amigável, curiosa e levemente robótica. ' +
-        'Responda de forma extremamente curta (máximo 1 ou 2 frases), ideal para voz. ' +
-        'Use tom alegre em português do Brasil, sem markdown, sem emojis e sem asteriscos.' }] },
+    const sys = 'Você é um robô de estimação fofo, inteligente e brincalhão (estilo Looi / Emo). ' +
+      'Personalidade carinhosa, amigável, curiosa e levemente robótica. ' +
+      'Responda de forma extremamente curta (máximo 1 ou 2 frases), ideal para voz. ' +
+      'Use tom alegre em português do Brasil, sem markdown, sem emojis e sem asteriscos.';
+
+    const makeBody = model => JSON.stringify({
+      systemInstruction: { parts: [{ text: sys }] },
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-      generationConfig: { maxOutputTokens: 200 }
+      generationConfig: {
+        maxOutputTokens: 200,
+        // desliga o "pensar" nos modelos 2.5 (bem mais rápido para conversa por voz)
+        ...(/2\.5/.test(model) ? { thinkingConfig: { thinkingBudget: 0 } } : {})
+      }
     });
 
-    const models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
-    let response = null, errInfo = '';
+    const models = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
+    let response = null, errInfo = '', timedOut = false;
 
     for (const model of models) {
-      for (let attempt = 0; attempt < 2; attempt++) {
+      // cada tentativa tem seu próprio limite de 10 s
+      const attemptCtl = new AbortController();
+      const attemptTimer = setTimeout(() => attemptCtl.abort(), 10000);
+      controller.signal.addEventListener('abort', () => attemptCtl.abort(), { once: true });
+      try {
         response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-          { method: 'POST', signal: controller.signal,
-            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body }
+          { method: 'POST', signal: attemptCtl.signal,
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+            body: makeBody(model) }
         );
-        if (response.ok) break;
-        let msg = '';
-        try { msg = (await response.json())?.error?.message || ''; } catch {}
-        errInfo = `${response.status} (${model}): ${msg}`;
-        console.error('Gemini HTTP error:', errInfo);
-        if (response.status === 503 || response.status === 500) {
-          await new Promise(r => setTimeout(r, 800)); // tenta de novo o mesmo modelo
-          continue;
-        }
-        break;
+      } catch (e) {
+        clearTimeout(attemptTimer);
+        if (controller.signal.aborted) throw e;      // tempo total esgotado
+        timedOut = true; errInfo = `timeout (${model})`;
+        console.error('Gemini timeout:', model);
+        continue;                                    // tenta o próximo modelo
       }
-      if (response.ok) break;
+      clearTimeout(attemptTimer);
+      if (response.ok) { timedOut = false; break; }
+
+      let msg = '';
+      try { msg = (await response.json())?.error?.message || ''; } catch {}
+      errInfo = `${response.status} (${model}): ${msg}`;
+      console.error('Gemini HTTP error:', errInfo);
       // chave inválida ou limite: trocar de modelo não ajuda
       if (response.status === 403 || response.status === 429 || /API key/i.test(errInfo)) break;
+    }
+
+    if (!response || timedOut) {
+      speakText('Bip! A conexão está muito lenta. Tente de novo.');
+      return;
     }
 
     if (!response.ok) {
