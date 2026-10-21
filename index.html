@@ -337,31 +337,52 @@ async function fetchGeminiAIResponse(userPrompt) {
   const timeout = setTimeout(() => controller.abort(), 20000);
 
   try {
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-      {
-        method: 'POST',
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text:
-            'Você é um robô de estimação fofo, inteligente e brincalhão (estilo Looi / Emo). ' +
-            'Personalidade carinhosa, amigável, curiosa e levemente robótica. ' +
-            'Responda de forma extremamente curta (máximo 1 ou 2 frases), ideal para voz. ' +
-            'Use tom alegre em português do Brasil, sem markdown, sem emojis e sem asteriscos.' }] },
-          contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-          generationConfig: { maxOutputTokens: 200, thinkingConfig: { thinkingBudget: 0 } }
-        })
+    const body = JSON.stringify({
+      systemInstruction: { parts: [{ text:
+        'Você é um robô de estimação fofo, inteligente e brincalhão (estilo Looi / Emo). ' +
+        'Personalidade carinhosa, amigável, curiosa e levemente robótica. ' +
+        'Responda de forma extremamente curta (máximo 1 ou 2 frases), ideal para voz. ' +
+        'Use tom alegre em português do Brasil, sem markdown, sem emojis e sem asteriscos.' }] },
+      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+      generationConfig: { maxOutputTokens: 200 }
+    });
+
+    const models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
+    let response = null, errInfo = '';
+
+    for (const model of models) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          { method: 'POST', signal: controller.signal,
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body }
+        );
+        if (response.ok) break;
+        let msg = '';
+        try { msg = (await response.json())?.error?.message || ''; } catch {}
+        errInfo = `${response.status} (${model}): ${msg}`;
+        console.error('Gemini HTTP error:', errInfo);
+        if (response.status === 503 || response.status === 500) {
+          await new Promise(r => setTimeout(r, 800)); // tenta de novo o mesmo modelo
+          continue;
+        }
+        break;
       }
-    );
+      if (response.ok) break;
+      // chave inválida ou limite: trocar de modelo não ajuda
+      if (response.status === 403 || response.status === 429 || /API key/i.test(errInfo)) break;
+    }
 
     if (!response.ok) {
-      if (response.status === 400 || response.status === 403) {
+      showSubtitle('Erro ' + errInfo.slice(0, 120));
+      if (response.status === 403 || /API key/i.test(errInfo)) {
         speakText('Bip! Sua chave API parece inválida. Confira nas configurações.');
       } else if (response.status === 429) {
         speakText('Bip! Falei demais por hoje. Tente de novo em instantes.');
+      } else if (response.status === 503) {
+        speakText('Bip! O servidor está sobrecarregado. Tente de novo daqui a pouco.');
       } else {
-        speakText('Bip! O servidor deu um erro. Tente de novo.');
+        speakText('Bip! O servidor deu um erro ' + response.status + '. Tente de novo.');
       }
       return;
     }
