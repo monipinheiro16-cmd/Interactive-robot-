@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full bg-black text-white select-none overflow-hidden">
 <head>
@@ -27,10 +28,6 @@
         .font-mono-tech {
             font-family: 'Share Tech Mono', monospace;
         }
-        /* Subdued glow effects */
-        .glow-cyan {
-            box-shadow: 0 0 40px rgba(6, 182, 212, 0.25);
-        }
         /* Soft pulse animation for subtle microphone indicator */
         @keyframes subtle-pulse {
             0%, 100% { transform: scale(1); opacity: 0.3; }
@@ -52,32 +49,46 @@
 </head>
 <body class="h-full w-full bg-black relative flex items-center justify-center">
 
-    <!-- 100% FULLSCREEN CANVAS FOR ROBOT FACE -->
+    <!-- FULLSCREEN CANVAS FOR ROBOT EYES -->
     <canvas id="robot-canvas" class="absolute inset-0 w-full h-full cursor-pointer z-0"></canvas>
 
-    <!-- STEALTH/MINIMAL OVERLAYS & UI -->
-
-    <!-- Top Minimal Status Bar (Fades out when inactive) -->
-    <div id="top-status-bar" class="absolute top-4 left-6 right-6 z-10 flex justify-between items-center pointer-events-none opacity-40 transition-opacity duration-500 font-mono-tech text-xs text-cyan-400">
+    <!-- TOP STATUS BAR -->
+    <div id="top-status-bar" class="absolute top-4 left-6 right-6 z-10 flex justify-between items-center pointer-events-none opacity-60 transition-opacity duration-500 font-mono-tech text-xs text-cyan-400">
         <div class="flex items-center gap-2">
-            <span id="state-dot" class="w-2 h-2 rounded-full bg-cyan-400"></span>
-            <span id="state-text" class="tracking-wider uppercase">PRONTO</span>
+            <span id="state-dot" class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+            <span id="state-text" class="tracking-wider uppercase font-bold">PRONTO</span>
         </div>
         <div id="hint-text" class="text-[10px] text-slate-500 uppercase tracking-widest hidden sm:block">
             Toque para Falar • 2 Toques: Configurações
         </div>
     </div>
 
-    <!-- Speech Subtitle Overlay (Minimal Subtitle at Bottom) -->
-    <div id="speech-subtitle-container" class="absolute bottom-16 left-6 right-6 z-10 pointer-events-none flex justify-center">
+    <!-- SPEECH SUBTITLE OVERLAY -->
+    <div id="speech-subtitle-container" class="absolute bottom-16 left-6 right-6 z-10 pointer-events-none flex flex-col items-center justify-center gap-2">
         <div id="speech-subtitle" class="max-w-md bg-slate-950/80 backdrop-blur-md border border-cyan-500/30 rounded-2xl px-5 py-3 text-center text-sm font-medium text-cyan-100 opacity-0 transform translate-y-4 transition-all duration-300 shadow-2xl">
             <span id="subtitle-text">...</span>
         </div>
     </div>
 
-    <!-- Minimal Touch Micro-Indicator at Bottom Center -->
+    <!-- DETAILED ERROR BANNER (POPS UP ON API/NETWORK ERRORS) -->
+    <div id="error-banner" class="absolute top-16 left-6 right-6 z-30 pointer-events-auto max-w-lg mx-auto bg-red-950/90 border border-red-500/60 backdrop-blur-xl rounded-2xl p-4 text-red-200 text-xs shadow-2xl hidden transition-all duration-300">
+        <div class="flex items-start justify-between gap-3">
+            <div class="flex items-start gap-2.5">
+                <i class="fa-solid fa-triangle-exclamation text-red-400 text-base mt-0.5"></i>
+                <div class="space-y-1">
+                    <h4 class="font-bold text-red-300 uppercase tracking-wide font-mono-tech">Detalhes do Erro</h4>
+                    <p id="error-banner-msg" class="text-red-200 leading-relaxed font-mono">Nenhum erro registrado.</p>
+                </div>
+            </div>
+            <button onclick="dismissErrorBanner()" class="text-red-400 hover:text-white text-sm p-1">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- MINIMAL TOUCH MIC INDICATOR -->
     <div id="touch-mic-trigger" class="absolute bottom-5 z-10 flex flex-col items-center cursor-pointer p-3 group">
-        <!-- Visual Wavebars when listening -->
+        <!-- Audio Wavebars when listening -->
         <div id="audio-wave-bars" class="hidden flex items-center gap-1.5 h-8 mb-1">
             <div class="w-1 bg-cyan-400 rounded-full wave-bar-1"></div>
             <div class="w-1 bg-cyan-400 rounded-full wave-bar-2"></div>
@@ -85,12 +96,12 @@
             <div class="w-1 bg-cyan-400 rounded-full wave-bar-4"></div>
         </div>
         
-        <div id="mic-icon-circle" class="w-8 h-8 rounded-full bg-cyan-950/40 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-xs opacity-40 group-hover:opacity-100 transition-opacity animate-subtle-pulse">
+        <div id="mic-icon-circle" class="w-8 h-8 rounded-full bg-cyan-950/40 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-xs opacity-50 group-hover:opacity-100 transition-opacity animate-subtle-pulse">
             <i id="mic-icon" class="fa-solid fa-microphone"></i>
         </div>
     </div>
 
-    <!-- STEALTH FLOATING SETTINGS MODAL (Triggered via Double Tap or Gear Icon) -->
+    <!-- SETTINGS MODAL -->
     <div id="settings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative space-y-5 text-slate-200">
             
@@ -109,7 +120,20 @@
                 <label class="block text-xs font-mono-tech text-slate-400 uppercase tracking-wider">
                     Chave API Gemini
                 </label>
-                <input id="api-key-input" type="password" placeholder="Cole sua API Key aqui (AQ...)" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/80 rounded-xl px-3 py-2.5 text-xs text-cyan-200 font-mono-tech outline-none transition-colors">
+                <input id="api-key-input" type="password" placeholder="Cole sua API Key (AQ... ou AIza...)" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/80 rounded-xl px-3 py-2.5 text-xs text-cyan-200 font-mono-tech outline-none transition-colors">
+                <p class="text-[10px] text-slate-500">Funciona com chaves do Google AI Studio iniciadas em <b>AQ...</b> ou <b>AIza...</b></p>
+            </div>
+
+            <!-- Model Selection -->
+            <div class="space-y-2">
+                <label class="block text-xs font-mono-tech text-slate-400 uppercase tracking-wider">
+                    Modelo Gemini
+                </label>
+                <select id="model-select" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/80 rounded-xl px-3 py-2 text-xs text-cyan-200 font-mono-tech outline-none">
+                    <option value="gemini-1.5-flash">gemini-1.5-flash (Recomendado)</option>
+                    <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                    <option value="gemini-2.0-flash">gemini-2.0-flash (Experimental)</option>
+                </select>
             </div>
 
             <!-- Eye Color Preset Selector -->
@@ -118,15 +142,15 @@
                     Cor dos Olhos
                 </label>
                 <div class="grid grid-cols-4 gap-2">
-                    <button onclick="setThemeColors('#06b6d4', '#00f2fe')" class="h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-300 border border-cyan-400/50 hover:scale-105 transition-transform" title="Cyan"></button>
-                    <button onclick="setThemeColors('#a855f7', '#ec4899')" class="h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 border border-purple-400/50 hover:scale-105 transition-transform" title="Purple/Pink"></button>
-                    <button onclick="setThemeColors('#10b981', '#34d399')" class="h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-300 border border-emerald-400/50 hover:scale-105 transition-transform" title="Emerald"></button>
-                    <button onclick="setThemeColors('#f59e0b', '#fbbf24')" class="h-10 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-300 border border-amber-400/50 hover:scale-105 transition-transform" title="Amber"></button>
+                    <button onclick="setThemeColors('#06b6d4', '#00f2fe')" class="h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-300 border border-cyan-400/50 hover:scale-105 transition-transform" title="Cyan"></button>
+                    <button onclick="setThemeColors('#a855f7', '#ec4899')" class="h-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 border border-purple-400/50 hover:scale-105 transition-transform" title="Purple/Pink"></button>
+                    <button onclick="setThemeColors('#10b981', '#34d399')" class="h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-300 border border-emerald-400/50 hover:scale-105 transition-transform" title="Emerald"></button>
+                    <button onclick="setThemeColors('#f59e0b', '#fbbf24')" class="h-9 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-300 border border-amber-400/50 hover:scale-105 transition-transform" title="Amber"></button>
                 </div>
             </div>
 
-            <!-- Voice Pitch / Speed Settings -->
-            <div class="space-y-3 pt-2 border-t border-slate-800">
+            <!-- Pitch Settings -->
+            <div class="space-y-2 pt-2 border-t border-slate-800">
                 <div class="flex items-center justify-between text-xs text-slate-400 font-mono-tech">
                     <span>TOM DA VOZ (PITCH)</span>
                     <span id="pitch-val">1.3</span>
@@ -140,7 +164,7 @@
         </div>
     </div>
 
-    <!-- HEART / SPARKLE TOUCH PARTICLES CONTAINER -->
+    <!-- HEART / TOUCH PARTICLES CONTAINER -->
     <div id="particle-container" class="absolute inset-0 pointer-events-none z-20 overflow-hidden"></div>
 
     <!-- SETTINGS GEAR BUTTON -->
@@ -167,14 +191,17 @@
         const saveSettingsBtn = document.getElementById('save-settings-btn');
         const gearBtn = document.getElementById('gear-btn');
         const apiKeyInput = document.getElementById('api-key-input');
+        const modelSelect = document.getElementById('model-select');
         const pitchSlider = document.getElementById('pitch-slider');
         const pitchVal = document.getElementById('pitch-val');
+        const errorBanner = document.getElementById('error-banner');
+        const errorBannerMsg = document.getElementById('error-banner-msg');
 
         // Color Theme
-        let primaryColor = '#06b6d4';   // Neon Cyan
-        let secondaryColor = '#00f2fe'; // Bright Highlight Cyan
+        let primaryColor = '#06b6d4';
+        let secondaryColor = '#00f2fe';
 
-        // Robot States: 'IDLE', 'LISTENING', 'THINKING', 'SPEAKING', 'HAPPY', 'SHOCKED'
+        // Robot States: 'IDLE', 'LISTENING', 'THINKING', 'SPEAKING', 'HAPPY', 'ERROR'
         let robotState = 'IDLE';
 
         // Eye Animation Variables
@@ -183,19 +210,20 @@
         let targetLookY = 0;
         let currentLookX = 0;
         let currentLookY = 0;
-        let blinkProgress = 0; // 0 = open, 1 = closed
+        let blinkProgress = 0;
         let isBlinking = false;
         let lastBlinkTime = Date.now();
         let blinkInterval = 3200;
 
-        // Voice Pulse / Audio Wave Simulation Variables
         let speechAnimPhase = 0;
 
-        // Custom Gemini API Key override
+        // Custom Settings Storage
         let customApiKey = localStorage.getItem('gemini_custom_key') || '';
+        let selectedModel = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
+        
         if (customApiKey) apiKeyInput.value = customApiKey;
+        if (selectedModel) modelSelect.value = selectedModel;
 
-        // Double-Tap Detection
         let lastTapTime = 0;
 
         // --- CANVAS RESIZE & DYNAMIC RATIO ---
@@ -240,7 +268,7 @@
                 return;
             }
 
-            if (robotState === 'IDLE') {
+            if (robotState === 'IDLE' || robotState === 'HAPPY') {
                 createTouchHearts(e.clientX, e.clientY);
                 triggerVoiceRecognition();
             }
@@ -284,15 +312,15 @@
             ctx.translate(centerX + currentLookX, centerY + currentLookY);
 
             const grad = ctx.createLinearGradient(0, -height, 0, height);
-            grad.addColorStop(0, secondaryColor);
-            grad.addColorStop(1, primaryColor);
+            grad.addColorStop(0, robotState === 'ERROR' ? '#f87171' : secondaryColor);
+            grad.addColorStop(1, robotState === 'ERROR' ? '#ef4444' : primaryColor);
             ctx.fillStyle = grad;
 
             const effectiveHeight = height * (1 - blinkProgress);
 
             if (effectiveHeight <= 3) {
                 ctx.beginPath();
-                ctx.strokeStyle = primaryColor;
+                ctx.strokeStyle = robotState === 'ERROR' ? '#ef4444' : primaryColor;
                 ctx.lineWidth = 8;
                 ctx.lineCap = 'round';
                 ctx.moveTo(-width / 1.3, 0);
@@ -408,21 +436,26 @@
             stateText.textContent = labelText || state;
 
             if (state === 'LISTENING') {
-                stateDot.className = 'w-2 h-2 rounded-full bg-cyan-400 animate-ping';
+                stateDot.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping';
                 audioWaveBars.classList.remove('hidden');
                 micIconCircle.classList.add('hidden');
             } else if (state === 'THINKING') {
-                stateDot.className = 'w-2 h-2 rounded-full bg-purple-400 animate-pulse';
+                stateDot.className = 'w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse';
                 audioWaveBars.classList.add('hidden');
                 micIconCircle.classList.remove('hidden');
                 micIcon.className = 'fa-solid fa-brain text-purple-400 animate-spin';
             } else if (state === 'SPEAKING') {
-                stateDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                stateDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
                 audioWaveBars.classList.add('hidden');
                 micIconCircle.classList.remove('hidden');
                 micIcon.className = 'fa-solid fa-volume-high text-emerald-400';
+            } else if (state === 'ERROR') {
+                stateDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 animate-ping';
+                audioWaveBars.classList.add('hidden');
+                micIconCircle.classList.remove('hidden');
+                micIcon.className = 'fa-solid fa-triangle-exclamation text-red-400';
             } else {
-                stateDot.className = 'w-2 h-2 rounded-full bg-cyan-400';
+                stateDot.className = 'w-2.5 h-2.5 rounded-full bg-cyan-400';
                 audioWaveBars.classList.add('hidden');
                 micIconCircle.classList.remove('hidden');
                 micIcon.className = 'fa-solid fa-microphone';
@@ -440,57 +473,103 @@
             speechSubtitle.classList.remove('opacity-100', 'translate-y-0');
         }
 
-        // --- GEMINI REAL AI INTEGRATION (SUPORTE A CHAVES 'AQ...') ---
+        function showErrorBanner(msg) {
+            errorBannerMsg.textContent = msg;
+            errorBanner.classList.remove('hidden');
+            setRobotState('ERROR', 'ERRO');
+        }
+
+        function dismissErrorBanner() {
+            errorBanner.classList.add('hidden');
+            if (robotState === 'ERROR') {
+                setRobotState('IDLE', 'PRONTO');
+            }
+        }
+
+        // --- GEMINI REAL AI INTEGRATION (UNIVERSAL SUPPORT FOR 'AQ...' AND 'AIza...') ---
         async function fetchGeminiAIResponse(userPrompt) {
+            dismissErrorBanner();
             setRobotState('THINKING', 'PENSANDO...');
             showSubtitle('Pensando...');
 
-            const systemPrompt = `Você é um robô de estimação fofo, altamente inteligente e brincalhão (estilo Looi / Emo). 
-Sua personalidade é carinhosa, amigável, curiosa e levemente robótica. 
-Responda de forma extremamente curta e direta (máximo 1 ou 2 frases curtas), ideal para voz falada. 
-Use um tom alegre em português do Brasil.`;
-
-            const apiKey = customApiKey.trim();
-            if (!apiKey) {
-                speakText('Bip! Por favor, insira sua chave da API nas configurações.');
+            const cleanKey = customApiKey.trim();
+            if (!cleanKey) {
+                showErrorBanner("Chave API não configurada. Por favor insira sua chave nas configurações.");
+                speakText('Por favor, insira sua chave da API nas configurações.');
                 openSettings();
                 return;
             }
 
-            // Endpoint genérico compatível com as novas credenciais
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+            const systemPrompt = "Você é um robô de estimação fofo, amigável e direto. Responda em português de forma extremamente curta (máximo 1 ou 2 frases curtas).";
+            const fullPrompt = `${systemPrompt}\n\nUsuário: ${userPrompt}`;
 
-            const payload = {
-                contents: [{ role: 'user', parts: [{ text: systemPrompt + "\n\nUsuário: " + userPrompt }] }]
-            };
+            // Array of fallback models to attempt sequentially
+            const modelsToTry = [
+                modelSelect.value || 'gemini-1.5-flash',
+                'gemini-1.5-flash',
+                'gemini-1.5-pro'
+            ];
+            
+            // Remove duplicates
+            const uniqueModels = [...new Set(modelsToTry)];
 
-            try {
-                // Ajustado para enviar a nova chave via Bearer Token (essencial para as chaves 'AQ...')
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify(payload)
-                });
+            let lastErrorMsg = "";
 
-                if (!response.ok) {
-                    throw new Error(`Erro na requisição: ${response.status}`);
+            for (const model of uniqueModels) {
+                try {
+                    // Universal Query Parameter pattern required by Gemini Google AI REST API
+                    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`;
+                    
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{ text: fullPrompt }]
+                            }]
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errJson = await response.json().catch(() => ({}));
+                        const apiErrMsg = errJson?.error?.message || `HTTP ${response.status} ${response.statusText}`;
+                        lastErrorMsg = `Modelo '${model}': ${apiErrMsg}`;
+                        console.warn(`Tentativa com ${model} falhou:`, apiErrMsg);
+                        
+                        // If 400 or 403 API Key invalid, don't waste time retrying other models
+                        if (response.status === 400 || response.status === 403) {
+                            if (apiErrMsg.toLowerCase().includes('key')) {
+                                throw new Error(`Chave API inválida ou sem permissão (${response.status}). Verifique no Google AI Studio.`);
+                            }
+                        }
+                        continue; // try next model
+                    }
+
+                    const data = await response.json();
+                    const textResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (textResponse) {
+                        speakText(textResponse);
+                        return; // Success!
+                    } else {
+                        lastErrorMsg = `Resposta vazia retornada pelo modelo ${model}`;
+                    }
+
+                } catch (err) {
+                    console.error('Fetch exception:', err);
+                    lastErrorMsg = err.message || "Erro de conexão / CORS";
+                    if (err.message.includes('Chave API')) break;
                 }
-
-                const data = await response.json();
-                const aiResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Bip bop! Não entendi muito bem!";
-                
-                speakText(aiResponse);
-
-            } catch (err) {
-                console.error('Gemini Error:', err);
-                speakText('Bip! Tive um probleminha de conexão, verifique sua chave API.');
             }
+
+            // If execution reaches here, all models failed
+            showErrorBanner(lastErrorMsg || "Erro desconhecido ao conectar com a API do Gemini.");
+            speakText('Bip! Ocorreu um erro na conexão. Veja a mensagem na tela.');
         }
 
-        // --- WEB SPEECH SYNTHESIS (BOT SPEECH VOICE) ---
+        // --- WEB SPEECH SYNTHESIS ---
         const synth = window.speechSynthesis;
 
         function speakText(text) {
@@ -517,67 +596,81 @@ Use um tom alegre em português do Brasil.`;
             if (ptVoice) utterance.voice = ptVoice;
 
             utterance.onend = () => {
-                setRobotState('HAPPY', 'ALEGRE');
-                setTimeout(() => {
-                    setRobotState('IDLE', 'PRONTO');
-                    hideSubtitle();
-                }, 1800);
+                if (robotState !== 'ERROR') {
+                    setRobotState('HAPPY', 'ALEGRE');
+                    setTimeout(() => {
+                        if (robotState === 'HAPPY') setRobotState('IDLE', 'PRONTO');
+                        hideSubtitle();
+                    }, 1800);
+                }
             };
 
             utterance.onerror = () => {
-                setRobotState('IDLE', 'PRONTO');
+                if (robotState !== 'ERROR') setRobotState('IDLE', 'PRONTO');
                 hideSubtitle();
             };
 
             synth.speak(utterance);
         }
 
-        // --- WEB SPEECH RECOGNITION (VOICE INPUT) ---
+        // --- WEB SPEECH RECOGNITION ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         function triggerVoiceRecognition() {
-            if (robotState !== 'IDLE') return;
+            if (robotState === 'THINKING' || robotState === 'SPEAKING') return;
 
             if (!customApiKey) {
+                showErrorBanner("Insira sua chave da API Gemini nas configurações para começar.");
                 speakText('Insira sua chave API nas configurações primeiro!');
                 openSettings();
                 return;
             }
 
             if (!SpeechRecognition) {
-                speakText('Opa! Seu navegador não suporta reconhecimento de voz.');
+                showErrorBanner("Reconhecimento de voz não é suportado neste navegador. Use o Chrome/Safari.");
+                speakText('Navegador sem suporte a voz.');
                 return;
             }
 
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'pt-BR';
-            recognition.continuous = false;
-            recognition.interimResults = false;
+            try {
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'pt-BR';
+                recognition.continuous = false;
+                recognition.interimResults = false;
 
-            recognition.onstart = () => {
-                setRobotState('LISTENING', 'OUVINDO...');
-                showSubtitle('Ouvindo você...');
-            };
+                recognition.onstart = () => {
+                    dismissErrorBanner();
+                    setRobotState('LISTENING', 'OUVINDO...');
+                    showSubtitle('Ouvindo você...');
+                };
 
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                showSubtitle(`"${transcript}"`);
-                fetchGeminiAIResponse(transcript);
-            };
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    showSubtitle(`"${transcript}"`);
+                    fetchGeminiAIResponse(transcript);
+                };
 
-            recognition.onerror = () => {
-                setRobotState('IDLE', 'PRONTO');
-                showSubtitle('Não consegui ouvir. Toque para tentar novamente.');
-                setTimeout(hideSubtitle, 2000);
-            };
-
-            recognition.onend = () => {
-                if (robotState === 'LISTENING') {
+                recognition.onerror = (e) => {
+                    console.error('Microphone recognition error:', e.error);
+                    if (e.error === 'not-allowed') {
+                        showErrorBanner("Permissão de microfone negada. Permita o uso do microfone no seu navegador.");
+                    } else if (e.error !== 'no-speech') {
+                        showErrorBanner(`Erro no microfone: ${e.error}`);
+                    }
                     setRobotState('IDLE', 'PRONTO');
-                }
-            };
+                    setTimeout(hideSubtitle, 2000);
+                };
 
-            recognition.start();
+                recognition.onend = () => {
+                    if (robotState === 'LISTENING') {
+                        setRobotState('IDLE', 'PRONTO');
+                    }
+                };
+
+                recognition.start();
+            } catch (err) {
+                showErrorBanner(`Erro ao ativar microfone: ${err.message}`);
+            }
         }
 
         // --- SETTINGS MODAL LOGIC ---
@@ -599,8 +692,13 @@ Use um tom alegre em português do Brasil.`;
         closeSettingsBtn.addEventListener('click', closeSettings);
         saveSettingsBtn.addEventListener('click', () => {
             customApiKey = apiKeyInput.value.trim();
+            selectedModel = modelSelect.value;
+            
             localStorage.setItem('gemini_custom_key', customApiKey);
+            localStorage.setItem('gemini_model', selectedModel);
+            
             closeSettings();
+            dismissErrorBanner();
             speakText('Configurações salvas!');
         });
 
@@ -608,17 +706,19 @@ Use um tom alegre em português do Brasil.`;
             pitchVal.textContent = e.target.value;
         });
 
-        // Initial Greeting on Boot
+        // Initial Greeting
         window.addEventListener('load', () => {
             setTimeout(() => {
                 if (!customApiKey) {
-                    speakText('Toque na engrenagem no topo e coloque sua chave API!');
+                    showErrorBanner("Sua chave da API Gemini é necessária para o robô responder.");
+                    speakText('Toque na engrenagem no topo para colocar sua chave!');
                     openSettings();
                 } else {
-                    speakText('Olá! Eu sou seu pet de Inteligência Artificial!');
+                    speakText('Olá! Toque na tela para conversar comigo!');
                 }
             }, 600);
         });
     </script>
 </body>
 </html>
+```
