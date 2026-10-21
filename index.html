@@ -109,7 +109,7 @@
                 <label class="block text-xs font-mono-tech text-slate-400 uppercase tracking-wider">
                     Chave API Gemini
                 </label>
-                <input id="api-key-input" type="password" placeholder="Cole sua API Key aqui (AIzaSy...)" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/80 rounded-xl px-3 py-2.5 text-xs text-cyan-200 font-mono-tech outline-none transition-colors">
+                <input id="api-key-input" type="password" placeholder="Cole sua API Key aqui (AQ...)" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/80 rounded-xl px-3 py-2.5 text-xs text-cyan-200 font-mono-tech outline-none transition-colors">
             </div>
 
             <!-- Eye Color Preset Selector -->
@@ -440,7 +440,7 @@
             speechSubtitle.classList.remove('opacity-100', 'translate-y-0');
         }
 
-        // --- GEMINI REAL AI INTEGRATION (GEMINI 2.5 FLASH) ---
+        // --- GEMINI REAL AI INTEGRATION (SUPORTE A CHAVES 'AQ...') ---
         async function fetchGeminiAIResponse(userPrompt) {
             setRobotState('THINKING', 'PENSANDO...');
             showSubtitle('Pensando...');
@@ -450,25 +450,28 @@ Sua personalidade é carinhosa, amigável, curiosa e levemente robótica.
 Responda de forma extremamente curta e direta (máximo 1 ou 2 frases curtas), ideal para voz falada. 
 Use um tom alegre em português do Brasil.`;
 
-            const apiKey = customApiKey;
+            const apiKey = customApiKey.trim();
             if (!apiKey) {
                 speakText('Bip! Por favor, insira sua chave da API nas configurações.');
                 openSettings();
                 return;
             }
 
-            // Endpoint atualizado para o modelo gemini-2.5-flash
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            // Endpoint genérico compatível com as novas credenciais
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
 
             const payload = {
-                contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] }
+                contents: [{ role: 'user', parts: [{ text: systemPrompt + "\n\nUsuário: " + userPrompt }] }]
             };
 
             try {
+                // Ajustado para enviar a nova chave via Bearer Token (essencial para as chaves 'AQ...')
                 const response = await fetch(apiUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
                     body: JSON.stringify(payload)
                 });
 
