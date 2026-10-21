@@ -1,619 +1,363 @@
-```html
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full bg-black text-white select-none overflow-hidden">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AI Robot Companion</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <style>
-        * {
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-        }
-        body, html {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #000000;
-            font-family: 'Outfit', sans-serif;
-        }
-        .font-mono-tech {
-            font-family: 'Share Tech Mono', monospace;
-        }
-        /* Subdued glow effects */
-        .glow-cyan {
-            box-shadow: 0 0 40px rgba(6, 182, 212, 0.25);
-        }
-        /* Soft pulse animation for subtle microphone indicator */
-        @keyframes subtle-pulse {
-            0%, 100% { transform: scale(1); opacity: 0.3; }
-            50% { transform: scale(1.2); opacity: 0.8; }
-        }
-        .animate-subtle-pulse {
-            animation: subtle-pulse 2s infinite ease-in-out;
-        }
-        /* Listening wave animation */
-        @keyframes wave-bar {
-            0%, 100% { height: 6px; }
-            50% { height: 28px; }
-        }
-        .wave-bar-1 { animation: wave-bar 0.6s infinite ease-in-out 0.0s; }
-        .wave-bar-2 { animation: wave-bar 0.6s infinite ease-in-out 0.15s; }
-        .wave-bar-3 { animation: wave-bar 0.6s infinite ease-in-out 0.3s; }
-        .wave-bar-4 { animation: wave-bar 0.6s infinite ease-in-out 0.45s; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Robô Pet IA</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      background-color: #050508;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      touch-action: none;
+    }
+    /* Botão discreto para configurações no canto */
+    #config-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.3s;
+    }
+    #config-btn:active {
+      background: rgba(255, 255, 255, 0.3);
+      color: #fff;
+    }
+    /* Modal de API Key */
+    #modal {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 20;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #modal.active {
+      display: flex;
+    }
+    .modal-card {
+      background: #12131a;
+      border: 1px solid #232636;
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 360px;
+      color: #fff;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .modal-card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+      color: #00f2fe;
+    }
+    .modal-card p {
+      font-size: 0.85rem;
+      color: #8a8d9b;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+    .modal-card input {
+      width: 100%;
+      padding: 14px;
+      background: #090a0f;
+      border: 1px solid #232636;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+      outline: none;
+    }
+    .modal-card input:focus {
+      border-color: #00f2fe;
+    }
+    .modal-card button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .modal-card button:active {
+      opacity: 0.9;
+    }
+  </style>
 </head>
-<body class="h-full w-full bg-black relative flex items-center justify-center">
+<body>
 
-    <!-- 100% FULLSCREEN CANVAS FOR ROBOT FACE -->
-    <canvas id="robot-canvas" class="absolute inset-0 w-full h-full cursor-pointer z-0"></canvas>
+  <button id="config-btn">⚙</button>
+  <canvas id="petCanvas"></canvas>
 
-    <!-- STEALTH/MINIMAL OVERLAYS & UI -->
-
-    <!-- Top Minimal Status Bar (Fades out when inactive) -->
-    <div id="top-status-bar" class="absolute top-4 left-6 right-6 z-10 flex justify-between items-center pointer-events-none opacity-40 transition-opacity duration-500 font-mono-tech text-xs text-cyan-400">
-        <div class="flex items-center gap-2">
-            <span id="state-dot" class="w-2 h-2 rounded-full bg-cyan-400"></span>
-            <span id="state-text" class="tracking-wider uppercase">PRONTO</span>
-        </div>
-        <div id="hint-text" class="text-[10px] text-slate-500 uppercase tracking-widest hidden sm:block">
-            Toque para Falar • 2 Toques: Configurações
-        </div>
+  <div id="modal">
+    <div class="modal-card">
+      <h2>Gemini API Key</h2>
+      <p>Insira sua chave da API do Google AI Studio para o robô poder conversar com você.</p>
+      <input type="password" id="api-key-input" placeholder="Cole sua chave aqui (AIzaSy...)" />
+      <button id="save-key-btn">Salvar e Iniciar</button>
     </div>
+  </div>
 
-    <!-- Speech Subtitle Overlay (Minimal Subtitle at Bottom) -->
-    <div id="speech-subtitle-container" class="absolute bottom-16 left-6 right-6 z-10 pointer-events-none flex justify-center">
-        <div id="speech-subtitle" class="max-w-md bg-slate-950/80 backdrop-blur-md border border-cyan-500/30 rounded-2xl px-5 py-3 text-center text-sm font-medium text-cyan-100 opacity-0 transform translate-y-4 transition-all duration-300 shadow-2xl">
-            <span id="subtitle-text">...</span>
-        </div>
-    </div>
+  <script>
+    const canvas = document.getElementById('petCanvas');
+    const ctx = canvas.getContext('2d');
+    const configBtn = document.getElementById('config-btn');
+    const modal = document.getElementById('modal');
+    const apiKeyInput = document.getElementById('api-key-input');
+    const saveKeyBtn = document.getElementById('save-key-btn');
 
-    <!-- Minimal Touch Micro-Indicator at Bottom Center -->
-    <div id="touch-mic-trigger" class="absolute bottom-5 z-10 flex flex-col items-center cursor-pointer p-3 group">
-        <!-- Visual Wavebars when listening -->
-        <div id="audio-wave-bars" class="hidden flex items-center gap-1.5 h-8 mb-1">
-            <div class="w-1 bg-cyan-400 rounded-full wave-bar-1"></div>
-            <div class="w-1 bg-cyan-400 rounded-full wave-bar-2"></div>
-            <div class="w-1 bg-cyan-400 rounded-full wave-bar-3"></div>
-            <div class="w-1 bg-cyan-400 rounded-full wave-bar-4"></div>
-        </div>
-        
-        <div id="mic-icon-circle" class="w-8 h-8 rounded-full bg-cyan-950/40 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-xs opacity-40 group-hover:opacity-100 transition-opacity animate-subtle-pulse">
-            <i id="mic-icon" class="fa-solid fa-microphone"></i>
-        </div>
-    </div>
+    let apiKey = localStorage.getItem('gemini_api_key') || '';
+    
+    // Se não tiver chave, abre a caixa automaticamente na cara do usuário
+    if (!apiKey) {
+      modal.classList.add('active');
+    } else {
+      apiKeyInput.value = apiKey;
+    }
 
-    <!-- STEALTH FLOATING SETTINGS MODAL (Triggered via Double Tap or Gear Icon) -->
-    <div id="settings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative space-y-5 text-slate-200">
-            
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div class="flex items-center gap-2 text-cyan-400">
-                    <i class="fa-solid fa-sliders text-sm"></i>
-                    <h2 class="font-bold text-sm tracking-wide">Configurações do Robô</h2>
-                </div>
-                <button id="close-settings-btn" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 flex items-center justify-center text-xs transition-colors">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
+    configBtn.onclick = () => modal.classList.add('active');
+    
+    saveKeyBtn.onclick = () => {
+      apiKey = apiKeyInput.value.trim();
+      if (apiKey) {
+        localStorage.setItem('gemini_api_key', apiKey);
+        modal.classList.remove('active');
+      } else {
+        alert('Por favor, cole uma chave válida.');
+      }
+    };
 
-            <!-- Gemini API Key Input -->
-            <div class="space-y-2">
-                <label class="block text-xs font-mono-tech text-slate-400 uppercase tracking-wider">
-                    Chave API Gemini (Opcional)
-                </label>
-                <input id="api-key-input" type="password" placeholder="Cole sua API Key aqui..." class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500/80 rounded-xl px-3 py-2.5 text-xs text-cyan-200 font-mono-tech outline-none transition-colors">
-                <p class="text-[10px] text-slate-500 leading-tight">
-                    *Se deixado em branco, utilizará a chave embutida da plataforma.
-                </p>
-            </div>
+    // Ajuste do Canvas
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
 
-            <!-- Eye Color Preset Selector -->
-            <div class="space-y-2">
-                <label class="block text-xs font-mono-tech text-slate-400 uppercase tracking-wider">
-                    Cor dos Olhos
-                </label>
-                <div class="grid grid-cols-4 gap-2">
-                    <button onclick="setThemeColors('#06b6d4', '#00f2fe')" class="h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-300 border border-cyan-400/50 hover:scale-105 transition-transform" title="Cyan"></button>
-                    <button onclick="setThemeColors('#a855f7', '#ec4899')" class="h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 border border-purple-400/50 hover:scale-105 transition-transform" title="Purple/Pink"></button>
-                    <button onclick="setThemeColors('#10b981', '#34d399')" class="h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-300 border border-emerald-400/50 hover:scale-105 transition-transform" title="Emerald"></button>
-                    <button onclick="setThemeColors('#f59e0b', '#fbbf24')" class="h-10 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-300 border border-amber-400/50 hover:scale-105 transition-transform" title="Amber"></button>
-                </div>
-            </div>
+    // Estado do Robô
+    const state = {
+      emotion: 'happy',
+      targetX: window.innerWidth / 2,
+      targetY: window.innerHeight / 2,
+      currentX: window.innerWidth / 2,
+      currentY: window.innerHeight / 2,
+      blinkProgress: 0,
+      isBlinking: false
+    };
 
-            <!-- Voice Pitch / Speed Settings -->
-            <div class="space-y-3 pt-2 border-t border-slate-800">
-                <div class="flex items-center justify-between text-xs text-slate-400 font-mono-tech">
-                    <span>TOM DA VOZ (PITCH)</span>
-                    <span id="pitch-val">1.3</span>
-                </div>
-                <input id="pitch-slider" type="range" min="0.8" max="1.8" step="0.1" value="1.3" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
-            </div>
+    // Rastreamento ao toque/mouse
+    function updateTarget(e) {
+      const x = e.touches ? e.touches[0].clientX : e.clientX;
+      const y = e.touches ? e.touches[0].clientY : e.clientY;
+      state.targetX = x;
+      state.targetY = y;
+    }
+    window.addEventListener('pointermove', updateTarget);
+    window.addEventListener('pointerdown', (e) => {
+      updateTarget(e);
+      if (!isListening && !isSpeaking) startListening();
+    });
 
-            <button id="save-settings-btn" class="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs tracking-wide transition-colors">
-                Salvar e Fechar
-            </button>
-        </div>
-    </div>
+    // Piscada automática
+    setInterval(() => {
+      if (!state.isBlinking && Math.random() < 0.3) {
+        state.isBlinking = true;
+      }
+    }, 2000);
 
-    <!-- HEART / SPARKLE TOUCH PARTICLES CONTAINER -->
-    <div id="particle-container" class="absolute inset-0 pointer-events-none z-20 overflow-hidden"></div>
+    // Loop de Renderização dos Olhos
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    <script>
-        // --- GLOBALS & APP STATE ---
-        const canvas = document.getElementById('robot-canvas');
-        const ctx = canvas.getContext('2d');
+      state.currentX += (state.targetX - state.currentX) * 0.1;
+      state.currentY += (state.targetY - state.currentY) * 0.1;
 
-        // UI Element References
-        const stateDot = document.getElementById('state-dot');
-        const stateText = document.getElementById('state-text');
-        const speechSubtitle = document.getElementById('speech-subtitle');
-        const subtitleText = document.getElementById('subtitle-text');
-        const touchMicTrigger = document.getElementById('touch-mic-trigger');
-        const audioWaveBars = document.getElementById('audio-wave-bars');
-        const micIconCircle = document.getElementById('mic-icon-circle');
-        const micIcon = document.getElementById('mic-icon');
-        const settingsModal = document.getElementById('settings-modal');
-        const closeSettingsBtn = document.getElementById('close-settings-btn');
-        const saveSettingsBtn = document.getElementById('save-settings-btn');
-        const apiKeyInput = document.getElementById('api-key-input');
-        const pitchSlider = document.getElementById('pitch-slider');
-        const pitchVal = document.getElementById('pitch-val');
-
-        // Color Theme
-        let primaryColor = '#06b6d4';   // Neon Cyan
-        let secondaryColor = '#00f2fe'; // Bright Highlight Cyan
-
-        // Robot States: 'IDLE', 'LISTENING', 'THINKING', 'SPEAKING', 'HAPPY', 'SHOCKED'
-        let robotState = 'IDLE';
-
-        // Eye Animation Variables
-        let dpr = window.devicePixelRatio || 1;
-        let targetLookX = 0;
-        let targetLookY = 0;
-        let currentLookX = 0;
-        let currentLookY = 0;
-        let blinkProgress = 0; // 0 = open, 1 = closed
-        let isBlinking = false;
-        let lastBlinkTime = Date.now();
-        let blinkInterval = 3200;
-
-        // Voice Pulse / Audio Wave Simulation Variables
-        let mouthPulse = 0; // Simulated mouth/eye bounce during speech
-        let speechAnimPhase = 0;
-
-        // Custom Gemini API Key override
-        let customApiKey = localStorage.getItem('gemini_custom_key') || '';
-        if (customApiKey) apiKeyInput.value = customApiKey;
-
-        // Double-Tap Detection
-        let lastTapTime = 0;
-
-        // --- CANVAS RESIZE & DYNAMIC RATIO ---
-        function resizeCanvas() {
-            dpr = window.devicePixelRatio || 1;
-            canvas.width = window.innerWidth * dpr;
-            canvas.height = window.innerHeight * dpr;
-            ctx.scale(dpr, dpr);
+      if (state.isBlinking) {
+        state.blinkProgress += 0.15;
+        if (state.blinkProgress >= 1) {
+          state.blinkProgress = 0;
+          state.isBlinking = false;
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+      }
 
-        // --- EYE TRACKING & TOUCH INPUT ---
-        function handlePointerMove(clientX, clientY) {
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-            
-            // Normalized look offset (-1 to 1)
-            const normX = (clientX - centerX) / centerX;
-            const normY = (clientY - centerY) / centerY;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const eyeOffset = Math.min(canvas.width, canvas.height) * 0.22;
+      const eyeSize = Math.min(canvas.width, canvas.height) * 0.18;
 
-            targetLookX = normX * 45;
-            targetLookY = normY * 30;
+      let eyeColor = '#00f2fe';
+      if (state.emotion === 'thinking') eyeColor = '#ff007f';
+      if (state.emotion === 'talking') eyeColor = '#00ff88';
+      if (state.emotion === 'angry') eyeColor = '#ff3333';
+
+      const lookLimit = eyeSize * 0.4;
+      const dx = (state.currentX - centerX) / (canvas.width / 2);
+      const dy = (state.currentY - centerY) / (canvas.height / 2);
+      const pupilX = dx * lookLimit;
+      const pupilY = dy * lookLimit;
+
+      const blinkScaleY = state.isBlinking ? Math.abs(Math.cos(state.blinkProgress * Math.PI)) : 1;
+
+      function drawEye(x) {
+        ctx.save();
+        ctx.translate(x, centerY);
+        ctx.scale(1, blinkScaleY);
+
+        ctx.shadowColor = eyeColor;
+        ctx.shadowBlur = 30;
+
+        ctx.fillStyle = eyeColor;
+        ctx.beginPath();
+        if (state.emotion === 'angry') {
+          ctx.roundRect(-eyeSize, -eyeSize, eyeSize * 2, eyeSize * 2, [eyeSize, eyeSize, 10, eyeSize]);
+        } else {
+          ctx.roundRect(-eyeSize, -eyeSize, eyeSize * 2, eyeSize * 2, eyeSize * 0.8);
         }
+        ctx.fill();
 
-        window.addEventListener('mousemove', (e) => handlePointerMove(e.clientX, e.clientY));
-        window.addEventListener('touchmove', (e) => {
-            if (e.touches.length > 0) {
-                handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
-            }
-        }, { passive: true });
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#050508';
+        ctx.beginPath();
+        ctx.arc(pupilX, pupilY, eyeSize * 0.4, 0, Math.PI * 2);
+        ctx.fill();
 
-        // Touch & Click Interaction (Tap to Speak / Double Tap for Settings)
-        window.addEventListener('pointerdown', (e) => {
-            // Ignore if clicking on modal elements
-            if (settingsModal.classList.contains('opacity-100') && settingsModal.contains(e.target)) return;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(pupilX - eyeSize * 0.15, pupilY - eyeSize * 0.15, eyeSize * 0.12, 0, Math.PI * 2);
+        ctx.fill();
 
-            const now = Date.now();
-            const tapGap = now - lastTapTime;
-            lastTapTime = now;
+        ctx.restore();
+      }
 
-            if (tapGap < 300) {
-                // Double Tap -> Open Settings
-                openSettings();
-                return;
-            }
+      drawEye(centerX - eyeOffset);
+      drawEye(centerX + eyeOffset);
 
-            // Single Tap -> Pet Reaction or Voice Listen
-            if (robotState === 'IDLE') {
-                createTouchHearts(e.clientX, e.clientY);
-                triggerVoiceRecognition();
-            }
+      requestAnimationFrame(render);
+    }
+    render();
+
+    // --- RECONHECIMENTO DE VOZ & GEMINI IA ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+    let isListening = false;
+    let isSpeaking = false;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        isListening = true;
+        state.emotion = 'thinking';
+      };
+
+      recognition.onend = () => {
+        isListening = false;
+      };
+
+      recognition.onresult = async (event) => {
+        const text = event.results[0][0].transcript;
+        await askGemini(text);
+      };
+    }
+
+    function startListening() {
+      if (!apiKey) {
+        modal.classList.add('active');
+        return;
+      }
+      if (recognition && !isListening && !isSpeaking) {
+        try { recognition.start(); } catch (e) {}
+      }
+    }
+
+    async function askGemini(promptText) {
+      state.emotion = 'thinking';
+
+      const systemPrompt = `Você é um pet robô fofo, simpático e inteligente. Responda em português de forma extremamente curta e concisa (máximo de 2 frases curtíssimas) como se fosse um assistente amigável.`;
+
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              { role: 'user', parts: [{ text: systemPrompt + "\nPergunta do usuário: " + promptText }] }
+            ]
+          })
         });
 
-        function createTouchHearts(x, y) {
-            const container = document.getElementById('particle-container');
-            for (let i = 0; i < 3; i++) {
-                const heart = document.createElement('div');
-                heart.className = 'absolute text-cyan-400 text-xl transition-all duration-700 pointer-events-none opacity-100';
-                heart.style.left = `${x + (Math.random() * 40 - 20)}px`;
-                heart.style.top = `${y + (Math.random() * 40 - 20)}px`;
-                heart.innerHTML = '<i class="fa-solid fa-heart"></i>';
+        const data = await res.json();
 
-                container.appendChild(heart);
-
-                requestAnimationFrame(() => {
-                    heart.style.transform = `translateY(-70px) scale(1.3) rotate(${(Math.random() - 0.5) * 40}deg)`;
-                    heart.style.opacity = '0';
-                });
-
-                setTimeout(() => heart.remove(), 700);
-            }
+        if (data.error) {
+          console.error("Erro da API Gemini:", data.error);
+          speak("Sua chave da API teve um problema. Verifique as configurações.");
+          return;
         }
 
-        // --- RENDER & EYE GRAPHICS ENGINE ---
-        function triggerBlink() {
-            if (!isBlinking) {
-                isBlinking = true;
-                blinkProgress = 0;
-            }
-        }
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Não entendi bem...";
+        speak(reply);
+      } catch (err) {
+        console.error("Erro na requisição:", err);
+        speak("Bip, tive um probleminha de conexão.");
+      }
+    }
 
-        function drawEyeShape(centerX, centerY, width, height, isRightEye = false) {
-            ctx.save();
-            ctx.translate(centerX + currentLookX, centerY + currentLookY);
+    function speak(text) {
+      if (!('speechSynthesis' in window)) return;
 
-            // Dynamic Gradient
-            const grad = ctx.createLinearGradient(0, -height, 0, height);
-            grad.addColorStop(0, secondaryColor);
-            grad.addColorStop(1, primaryColor);
-            ctx.fillStyle = grad;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'pt-BR';
+      utterance.pitch = 1.4;
+      utterance.rate = 1.1;
 
-            // Handle Blink
-            const effectiveHeight = height * (1 - blinkProgress);
+      utterance.onstart = () => {
+        isSpeaking = true;
+        state.emotion = 'talking';
+      };
 
-            if (effectiveHeight <= 3) {
-                // Closed line
-                ctx.beginPath();
-                ctx.strokeStyle = primaryColor;
-                ctx.lineWidth = 8;
-                ctx.lineCap = 'round';
-                ctx.moveTo(-width / 1.3, 0);
-                ctx.lineTo(width / 1.3, 0);
-                ctx.stroke();
-                ctx.restore();
-                return;
-            }
+      utterance.onend = () => {
+        isSpeaking = false;
+        state.emotion = 'happy';
+      };
 
-            // Render shapes based on Robot State / Expression
-            ctx.beginPath();
-
-            if (robotState === 'HAPPY') {
-                // Cute arch eyes
-                const rx = width / 2;
-                const ry = effectiveHeight / 2;
-                ctx.roundRect(-rx, -ry, width, effectiveHeight, [ry * 0.8, ry * 0.8, ry * 0.2, ry * 0.2]);
-                ctx.fill();
-
-                // Cut arch mask
-                ctx.globalCompositeOperation = 'destination-out';
-                ctx.beginPath();
-                ctx.ellipse(0, ry * 0.75, rx * 1.15, ry * 0.75, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalCompositeOperation = 'source-over';
-
-            } else if (robotState === 'LISTENING') {
-                // Slightly taller wide curious eyes
-                const rx = width / 2;
-                const ry = effectiveHeight / 2;
-                ctx.roundRect(-rx, -ry, width, effectiveHeight * 1.08, ry * 0.5);
-                ctx.fill();
-
-            } else if (robotState === 'THINKING') {
-                // Squinting or spiral/rotating effect pupil
-                const rx = width / 2;
-                const ry = effectiveHeight / 2;
-                ctx.rotate(isRightEye ? 0.15 : -0.15);
-                ctx.roundRect(-rx, -ry * 0.7, width, effectiveHeight * 0.7, ry * 0.4);
-                ctx.fill();
-
-            } else if (robotState === 'SPEAKING') {
-                // Pulsing height rhythmically to simulate mouth-eye talking reactivity
-                const talkHeight = effectiveHeight + Math.sin(speechAnimPhase) * 12;
-                const rx = width / 2;
-                const ry = talkHeight / 2;
-                ctx.roundRect(-rx, -ry, width, talkHeight, ry * 0.45);
-                ctx.fill();
-
-            } else { // IDLE
-                const rx = width / 2;
-                const ry = effectiveHeight / 2;
-                ctx.roundRect(-rx, -ry, width, effectiveHeight, ry * 0.45);
-                ctx.fill();
-            }
-
-            // Cute Gloss/Reflection Highlight
-            if (blinkProgress < 0.25 && robotState !== 'HAPPY') {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-                ctx.beginPath();
-                ctx.arc(-width * 0.2, -effectiveHeight * 0.22, width * 0.12, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.arc(width * 0.18, effectiveHeight * 0.2, width * 0.06, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            ctx.restore();
-        }
-
-        // Main 60fps Loop
-        function animate() {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-
-            ctx.clearRect(0, 0, width, height);
-
-            // Interpolate Look Offset
-            currentLookX += (targetLookX - currentLookX) * 0.1;
-            currentLookY += (targetLookY - currentLookY) * 0.1;
-
-            // Speech Animation Step
-            if (robotState === 'SPEAKING') {
-                speechAnimPhase += 0.25;
-            }
-
-            // Periodic Automatic Blink
-            const now = Date.now();
-            if (now - lastBlinkTime > blinkInterval) {
-                triggerBlink();
-                lastBlinkTime = now + (Math.random() * 2500);
-            }
-
-            if (isBlinking) {
-                blinkProgress += 0.18;
-                if (blinkProgress >= 1) {
-                    blinkProgress = 1;
-                    isBlinking = false;
-                }
-            } else if (blinkProgress > 0) {
-                blinkProgress -= 0.18;
-                if (blinkProgress < 0) blinkProgress = 0;
-            }
-
-            // Dynamic Scaling Based on Screen Size
-            const eyeWidth = Math.min(width * 0.22, 140);
-            const eyeHeight = Math.min(height * 0.35, 180);
-            const eyeSpacing = Math.min(width * 0.22, 160);
-
-            const leftEyeX = (width / 2) - eyeSpacing;
-            const rightEyeX = (width / 2) + eyeSpacing;
-            const eyeY = height / 2;
-
-            // Draw Both Eyes
-            drawEyeShape(leftEyeX, eyeY, eyeWidth, eyeHeight, false);
-            drawEyeShape(rightEyeX, eyeY, eyeWidth, eyeHeight, true);
-
-            requestAnimationFrame(animate);
-        }
-        animate();
-
-        // --- STATE MANAGEMENT & UI UPDATES ---
-        function setRobotState(state, labelText) {
-            robotState = state;
-            stateText.textContent = labelText || state;
-
-            if (state === 'LISTENING') {
-                stateDot.className = 'w-2 h-2 rounded-full bg-cyan-400 animate-ping';
-                audioWaveBars.classList.remove('hidden');
-                micIconCircle.classList.add('hidden');
-            } else if (state === 'THINKING') {
-                stateDot.className = 'w-2 h-2 rounded-full bg-purple-400 animate-pulse';
-                audioWaveBars.classList.add('hidden');
-                micIconCircle.classList.remove('hidden');
-                micIcon.className = 'fa-solid fa-brain text-purple-400 animate-spin';
-            } else if (state === 'SPEAKING') {
-                stateDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
-                audioWaveBars.classList.add('hidden');
-                micIconCircle.classList.remove('hidden');
-                micIcon.className = 'fa-solid fa-volume-high text-emerald-400';
-            } else { // IDLE
-                stateDot.className = 'w-2 h-2 rounded-full bg-cyan-400';
-                audioWaveBars.classList.add('hidden');
-                micIconCircle.classList.remove('hidden');
-                micIcon.className = 'fa-solid fa-microphone';
-            }
-        }
-
-        function showSubtitle(text) {
-            subtitleText.textContent = text;
-            speechSubtitle.classList.remove('opacity-0', 'translate-y-4');
-            speechSubtitle.classList.add('opacity-100', 'translate-y-0');
-        }
-
-        function hideSubtitle() {
-            speechSubtitle.classList.add('opacity-0', 'translate-y-4');
-            speechSubtitle.classList.remove('opacity-100', 'translate-y-0');
-        }
-
-        // --- GEMINI REAL AI INTEGRATION ---
-        async function fetchGeminiAIResponse(userPrompt) {
-            setRobotState('THINKING', 'PENSANDO...');
-            showSubtitle('Pensando...');
-
-            const systemPrompt = `Você é um robô de estimação fofo, altamente inteligente e brincalhão (estilo Looi / Emo). 
-Sua personalidade é carinhosa, amigável, curiosa e levemente robótica. 
-Responda de forma extremamente curta e direta (máximo 1 ou 2 frases curtas), ideal para voz falada. 
-Use um tom alegre em português do Brasil.`;
-
-            const apiKey = customApiKey || "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-            const payload = {
-                contents: [{ parts: [{ text: userPrompt }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] }
-            };
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Erro na requisição: ${response.status}`);
-                }
-
-                const data = await response.json();
-                const aiResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Bip bop! Não entendi muito bem!";
-                
-                speakText(aiResponse);
-
-            } catch (err) {
-                console.error('Gemini Error:', err);
-                speakText('Bip! Tive um probleminha de conexão, mas estou aqui!');
-            }
-        }
-
-        // --- WEB SPEECH SYNTHESIS (BOT SPEECH VOICE) ---
-        const synth = window.speechSynthesis;
-
-        function speakText(text) {
-            setRobotState('SPEAKING', 'FALANDO');
-            showSubtitle(text);
-
-            if (!synth) {
-                setTimeout(() => {
-                    setRobotState('IDLE', 'PRONTO');
-                    hideSubtitle();
-                }, 3000);
-                return;
-            }
-
-            synth.cancel(); // Stop any previous speech
-
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'pt-BR';
-            utterance.pitch = parseFloat(pitchSlider.value); // Higher pitch for cute robot
-            utterance.rate = 1.05;
-
-            // Select best Portuguese voice available
-            const voices = synth.getVoices();
-            const ptVoice = voices.find(v => v.lang.includes('pt')) || voices[0];
-            if (ptVoice) utterance.voice = ptVoice;
-
-            utterance.onend = () => {
-                setRobotState('HAPPY', 'ALEGRE');
-                setTimeout(() => {
-                    setRobotState('IDLE', 'PRONTO');
-                    hideSubtitle();
-                }, 1800);
-            };
-
-            utterance.onerror = () => {
-                setRobotState('IDLE', 'PRONTO');
-                hideSubtitle();
-            };
-
-            synth.speak(utterance);
-        }
-
-        // --- WEB SPEECH RECOGNITION (VOICE INPUT) ---
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-        function triggerVoiceRecognition() {
-            if (robotState !== 'IDLE') return;
-
-            if (!SpeechRecognition) {
-                speakText('Opa! Seu navegador não suporta reconhecimento de voz.');
-                return;
-            }
-
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'pt-BR';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
-            recognition.onstart = () => {
-                setRobotState('LISTENING', 'OUVINDO...');
-                showSubtitle('Ouvindo você...');
-            };
-
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                showSubtitle(`"${transcript}"`);
-                fetchGeminiAIResponse(transcript);
-            };
-
-            recognition.onerror = () => {
-                setRobotState('IDLE', 'PRONTO');
-                showSubtitle('Não consegui ouvir. Toque para tentar novamente.');
-                setTimeout(hideSubtitle, 2000);
-            };
-
-            recognition.onend = () => {
-                if (robotState === 'LISTENING') {
-                    setRobotState('IDLE', 'PRONTO');
-                }
-            };
-
-            recognition.start();
-        }
-
-        // --- SETTINGS MODAL LOGIC ---
-        function openSettings() {
-            settingsModal.classList.remove('opacity-0', 'pointer-events-none');
-            settingsModal.classList.add('opacity-100');
-        }
-
-        function closeSettings() {
-            settingsModal.classList.add('opacity-0', 'pointer-events-none');
-            settingsModal.classList.remove('opacity-100');
-        }
-
-        function setThemeColors(primary, secondary) {
-            primaryColor = primary;
-            secondaryColor = secondary;
-        }
-
-        closeSettingsBtn.addEventListener('click', closeSettings);
-        saveSettingsBtn.addEventListener('click', () => {
-            customApiKey = apiKeyInput.value.trim();
-            localStorage.setItem('gemini_custom_key', customApiKey);
-            closeSettings();
-            speakText('Configurações salvas!');
-        });
-
-        pitchSlider.addEventListener('input', (e) => {
-            pitchVal.textContent = e.target.value;
-        });
-
-        // Initial Greeting on Boot
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                speakText('Olá! Eu sou seu pet de Inteligência Artificial!');
-            }, 600);
-        });
-    </script>
+      window.speechSynthesis.speak(utterance);
+    }
+  </script>
 </body>
 </html>
-```
